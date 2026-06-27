@@ -5,12 +5,12 @@ import json
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
-from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
 from open_meteo_hourly_today import WEATHER_CODES, fetch_hourly_weather
 from plot_today_temperature import build_temperature_chart_png
+from web_page import INDEX_HTML
 
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -96,7 +96,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed_url = urlparse(self.path)
         if parsed_url.path in {"/", "/index.html"}:
-            self.send_html(Path("public/index.html").read_text(encoding="utf-8"))
+            self.send_html(INDEX_HTML)
             return
 
         if parsed_url.path != "/api/weather":
