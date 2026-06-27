@@ -14,6 +14,7 @@
 ├─ open_meteo_hourly_today.py
 ├─ plot_today_temperature.py
 ├─ requirements.txt
+├─ pyproject.toml
 ├─ vercel.json
 └─ .python-version
 ```
@@ -60,6 +61,15 @@ Python 서버리스 함수에서 이미지 대신 JSON 데이터를 내려주고
 {
   "$schema": "https://openapi.vercel.sh/vercel.json"
 }
+```
+
+## pyproject.toml 예시
+
+Vercel이 Python Function의 엔트리포인트를 확실히 찾도록 아래 설정을 둡니다.
+
+```toml
+[tool.vercel]
+entrypoint = "api.weather.index:handler"
 ```
 
 ## API 엔트리포인트
