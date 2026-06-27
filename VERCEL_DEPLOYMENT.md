@@ -7,7 +7,8 @@
 ```text
 .
 ├─ api/
-│  └─ index.py
+│  └─ weather/
+│     └─ index.py
 ├─ public/
 │  └─ index.html
 ├─ open_meteo_hourly_today.py
@@ -79,12 +80,12 @@ Python 서버리스 함수에서 이미지 대신 JSON 데이터를 내려주고
 
 ## API 엔트리포인트
 
-Vercel의 Python Function은 `api/index.py` 같은 `/api` 폴더 안의 Python 파일을 함수로 인식할 수 있습니다. 이 파일은 `BaseHTTPRequestHandler`를 상속한 `handler` 또는 ASGI/WSGI `app`을 노출해야 합니다.
+Vercel의 Python Function은 `/api` 폴더 안의 `index.py` 파일을 함수로 인식할 수 있습니다. 이 파일은 `BaseHTTPRequestHandler`를 상속한 `handler` 또는 ASGI/WSGI `app`을 노출해야 합니다.
 
 권장 방식:
 
 ```text
-api/index.py
+api/weather/index.py
 ```
 
 역할:
