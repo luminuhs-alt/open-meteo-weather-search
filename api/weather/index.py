@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
@@ -94,6 +95,14 @@ def weather_payload(location_query: str) -> dict:
 class handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed_url = urlparse(self.path)
+        if parsed_url.path in {"/", "/index.html"}:
+            self.send_html(Path("public/index.html").read_text(encoding="utf-8"))
+            return
+
+        if parsed_url.path != "/api/weather":
+            self.send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
+            return
+
         location = parse_qs(parsed_url.query).get("location", [""])[0].strip()
 
         if not location:
@@ -113,6 +122,15 @@ class handler(BaseHTTPRequestHandler):
         encoded = json.dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def send_html(self, content: str, status: HTTPStatus = HTTPStatus.OK) -> None:
+        encoded = content.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
