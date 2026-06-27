@@ -58,23 +58,7 @@ Python 서버리스 함수에서 이미지 대신 JSON 데이터를 내려주고
 
 ```json
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/**/*.py": {
-      "maxDuration": 30,
-      "excludeFiles": "{.venv/**,__pycache__/**,static/**,*.png}"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/public/index.html"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
 ```
 
