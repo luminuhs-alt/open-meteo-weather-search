@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>날씨 검색</title>
+    <style>
+        :root {
+            font-family: Arial, "Malgun Gothic", sans-serif;
+            background: #f7f9fc;
+            color: #172033;
+        }
+        body {
+            margin: 0;
+        }
+        main {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+        h1 {
+            margin: 0 0 10px;
+            font-size: clamp(30px, 5vw, 48px);
+            line-height: 1.05;
+        }
+        .subtitle {
+            margin: 0;
+            color: #56647a;
+            font-size: 17px;
+        }
+        form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 24px 0 18px;
+        }
+        input {
+            flex: 1;
+            min-width: 0;
+            height: 46px;
+            border: 1px solid #cfd8e3;
+            border-radius: 8px;
+            padding: 0 14px;
+            font-size: 16px;
+        }
+        button {
+            height: 46px;
+            border: 0;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            padding: 0 18px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .message {
+            border: 1px solid #d7e0ec;
+            border-radius: 8px;
+            background: white;
+            padding: 18px;
+            color: #56647a;
+        }
+        .error {
+            border-color: #f2b8b5;
+            color: #a12a2a;
+        }
+        .results {
+            display: none;
+            background: white;
+            border: 1px solid #d7e0ec;
+            border-radius: 8px;
+            padding: 22px;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 18px;
+        }
+        .eyebrow {
+            margin: 0 0 4px;
+            color: #2563eb;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .pill {
+            border-radius: 999px;
+            background: #eaf1ff;
+            color: #1d4ed8;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .chart {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid #e4eaf2;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            border-bottom: 1px solid #e6ecf3;
+            padding: 10px 9px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            color: #56647a;
+            background: #f8fafc;
+        }
+        @media (max-width: 640px) {
+            main {
+                width: min(100% - 20px, 1120px);
+                padding-top: 24px;
+            }
+            form {
+                flex-direction: column;
+            }
+            input, button {
+                width: 100%;
+            }
+            .results {
+                padding: 14px;
+            }
+            .result-header {
+                display: block;
+            }
+            .pill {
+                display: inline-block;
+                margin-top: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <section>
+            <h1>날씨 검색</h1>
+            <p class="subtitle">위치를 입력하면 오늘 날씨를 불러오고 시간별 기온 그래프를 생성합니다.</p>
+            <form id="weather-form">
+                <input id="location-input" name="location" value="Seoul" placeholder="예: Seoul, Busan, New York" required>
+                <button type="submit">검색</button>
+            </form>
+        </section>
+
+        <p id="message" class="message">도시나 지역명을 입력하면 오늘 1시간 간격 기온 그래프를 바로 보여줍니다.</p>
+
+        <section id="results" class="results">
+            <div class="result-header">
+                <div>
+                    <p class="eyebrow">Open-Meteo forecast</p>
+                    <h2 id="result-title"></h2>
+                </div>
+                <span id="result-count" class="pill"></span>
+            </div>
+            <img id="chart" class="chart" alt="Hourly temperature chart">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>시간</th>
+                            <th>기온</th>
+                            <th>체감</th>
+                            <th>습도</th>
+                            <th>강수확률</th>
+                            <th>강수량</th>
+                            <th>풍속</th>
+                            <th>날씨</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weather-rows"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.querySelector("#weather-form");
+        const input = document.querySelector("#location-input");
+        const message = document.querySelector("#message");
+        const results = document.querySelector("#results");
+        const title = document.querySelector("#result-title");
+        const count = document.querySelector("#result-count");
+        const chart = document.querySelector("#chart");
+        const rows = document.querySelector("#weather-rows");
+
+        function setMessage(text, isError = false) {
+            message.textContent = text;
+            message.classList.toggle("error", isError);
+            message.style.display = "block";
+        }
+
+        function hideMessage() {
+            message.style.display = "none";
+        }
+
+        function renderRows(items) {
+            rows.innerHTML = items.map((row) => `
+                <tr>
+                    <td>${row.time}</td>
+                    <td>${row.temperature} &deg;C</td>
+                    <td>${row.feels_like} &deg;C</td>
+                    <td>${row.humidity}%</td>
+                    <td>${row.rain_probability}%</td>
+                    <td>${row.precipitation} mm</td>
+                    <td>${row.wind} km/h</td>
+                    <td>${row.weather}</td>
+                </tr>
+            `).join("");
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const location = input.value.trim();
+            if (!location) return;
+
+            results.style.display = "none";
+            setMessage("날씨를 불러오고 그래프를 생성하는 중입니다...");
+
+            try {
+                const response = await fetch(`/api/weather?location=${encodeURIComponent(location)}`);
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || "날씨를 불러오지 못했습니다.");
+                }
+
+                title.textContent = `${payload.location} ${payload.date} 시간별 기온`;
+                count.textContent = `${payload.rows.length} hourly points`;
+                chart.src = payload.chart;
+                renderRows(payload.rows);
+                hideMessage();
+                results.style.display = "block";
+            } catch (error) {
+                setMessage(error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>
